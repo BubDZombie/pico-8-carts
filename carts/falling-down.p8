@@ -1,0 +1,69 @@
+pico-8 cartridge // http://www.pico-8.com
+version 43
+__lua__
+arrow_speed=1
+ball_x=64
+ball_y=64
+ball_size=4
+ball_speed=2
+platforms={}
+add(platforms,{x=55,y=80})
+platform_w=20
+platform_h=3
+
+function drop_ball()
+  can_fall=true
+  for p in all(platforms) do
+    if p.x < ball_x
+    and p.x + platform_w > ball_x
+    and p.y <= ball_y + ball_size
+    and p.y + platform_h >= ball_y + ball_size
+    then
+      can_fall=false
+      ball_y = p.y - ball_size
+    end
+  end
+  if can_fall then
+    ball_y+=ball_speed
+  end
+end
+
+function move_ball()
+  if btn(0) then
+    ball_x-=arrow_speed
+  elseif btn(1) then
+    ball_x+=arrow_speed
+  end
+end
+
+function _update()
+  move_ball()
+  drop_ball()
+end
+
+function _draw()
+  rectfill(0,0,128,128,0)
+  circfill(
+    ball_x,
+    ball_y,
+    ball_size,
+    11
+  )
+  for p in all(platforms) do
+    rectfill(
+      p.x,
+      p.y,
+      p.x+platform_w,
+      p.y+platform_h,
+      6
+    )
+  end
+end
+
+__gfx__
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
