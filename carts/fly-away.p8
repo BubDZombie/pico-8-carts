@@ -3,23 +3,33 @@ version 43
 __lua__
 arrow_speed=4
 ball={
-  x=64,
-  y=10,
   size=4,
-  speed=0,
-  up_space=0,
-  right_space=0,
-  down_space=0,
-  left_space=0,
-  can_fall=true,
-  alive=true,
   color=11
 }
+close_platforms={}
+dead_platforms={}
 platforms={}
+platform_color=7
 platform_w=16
 platform_h=2
-bg_color=1
-text_color=4
+bg_color=12
+text_color=7
+
+function check_platforms()
+  local close_distance=ball.size + platform_w + platform_h
+  close_platforms={}
+  dead_platforms={}
+  for p in all(platforms) do
+    if abs(p.x - ball.x) < close_distance
+        or abs(p.y - ball.y) < close_distance
+        then
+      add(close_platforms,p)
+    end
+    if p.y > 128 then
+      add(dead_platforms,p)
+    end
+  end
+end
 
 function check_space()
   local ceilings={platform_h}
@@ -30,7 +40,7 @@ function check_space()
   local ball_right=ball.x+ball.size+1
   local ball_bottom=ball.y+ball.size+1
   local ball_left=ball.x-ball.size-1
-  for p in all(platforms) do
+  for p in all(close_platforms) do
     local platform_top=p.y
     local platform_right=p.x+platform_w
     local platform_bottom=p.y+platform_h
@@ -81,13 +91,13 @@ function check_space()
     end
   end
   local platform_string=""
-  for p in all(platforms) do
+  for p in all(close_platforms) do
     platform_string..=p.x..","..p.y.." "
   end
   printh("ball.y "..ball.y)
   printh("ball top "..ball_top.." right "..ball_right.." bottom "..ball_bottom.." left "..ball_left)
   printh("ball spc bot "..ball.down_space)
-  printh("platforms "..platform_string)
+  printh("close platforms "..platform_string)
   printh("")
 end
 
@@ -168,10 +178,8 @@ function add_platforms()
 end
 
 function remove_platforms()
-  for p in all(platforms) do
-    if p.y < 1 then
-      del(platforms,p)
-    end
+  for p in all(dead_platforms) do
+    del(platforms,p)
   end
 end
 
@@ -223,15 +231,20 @@ function draw_game()
       p.y,
       p.x+platform_w,
       p.y+platform_h,
-      6
+      platform_color
     )
   end
   print("score "..score,1,120,text_color)
 end
 
+function print_center(str, y, col)
+    local x = 64 - (#tostr(str) * 2) 
+    print(str, x, y, col)
+end
+
 function draw_score()
-  print(score,64,64,text_color)
-  print("z to restart",64,96,text_color)
+  print_center("score: "..score,54,text_color)
+  print_center("🅾️ to restart",70,text_color)
 end
 
 function _draw()
@@ -249,6 +262,7 @@ end
 
 function _update()
   if ball.alive then
+    check_platforms()
     check_space()
     move_ball()
     check_space()
