@@ -1,13 +1,12 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
-arrow_speed=3
-camera_speed=2
+arrow_speed=4
 ball={
   x=64,
   y=10,
   size=3,
-  speed=3,
+  speed=4,
   up_space=0,
   right_space=0,
   down_space=0,
@@ -19,9 +18,7 @@ ball={
 platforms={}
 platform_w=16
 platform_h=2
-spread=32
-score=0
-bg_color=0
+bg_color=1
 text_color=4
 
 function check_space()
@@ -121,9 +118,9 @@ function drop_ball()
 end
 
 function lift()
-  if ball.down_space == 0
+  if ball.down_space < camera_speed
       and ball.y < 128 - ball.size then
-    ball.y-=camera_speed
+    ball.y-=camera_speed - ball.down_space
     printh("move ball up "..camera_speed.." to "..ball.y)
   end
   printh("move platforms up "..camera_speed)  
@@ -149,7 +146,7 @@ function add_platforms()
     local newbies={}
     full=128/platform_w
     for x = 1, 128, platform_w do
-      if rnd(64) > spread then
+      if rnd(platform_chance) > spread then
       --if rnd(256) > spread then
         new={x=x,y=128}
         add(platforms,new)
@@ -161,7 +158,7 @@ function add_platforms()
       del(platforms,remove)
     end
     if spread > ball.size * 2 + platform_h * 2
-        and rnd() > 0.75 
+        and rnd() < spread_shrink_chance 
         then
       spread-=1
     end
@@ -178,29 +175,22 @@ end
 
 function check_reset()
   if btn(4) then
-    score=0
-    ball.x=64
-    ball.y=ball.size
-    ball.alive=true
-    ball.can_fall=true
-    for p in all(platforms) do
-      del(platforms, p)
-    end
+    reset_game()
   end
 end
 
-function _update()
-  if ball.alive then
-    check_space()
-    move_ball()
-    check_space()
-    drop_ball()
-    check_space()
-    lift()
-    add_platforms()
-    remove_platforms()
-  else
-    check_reset()
+function reset_game()
+  ball.x=64
+  ball.y=ball.size
+  ball.alive=true
+  ball.can_fall=true
+  camera_speed=2
+  score=0
+  spread=28
+  spread_shrink_chance=0.10
+  platform_chance=2*spread
+  for p in all(platforms) do
+    del(platforms, p)
   end
 end
 
@@ -221,15 +211,11 @@ function draw_game()
     )
   end
   print("score "..score,1,1,text_color)
-  print("up    "..ball.up_space,1,10,text_color)
-  print("right "..ball.right_space,1,20,text_color)
-  print("down  "..ball.down_space,1,30,text_color)
-  print("left  "..ball.left_space,1,40,text_color)
 end
 
 function draw_score()
   print(score,64,64,text_color)
-  print("0 to restart",64,96,text_color)
+  print("z to restart",64,96,text_color)
 end
 
 function _draw()
@@ -238,6 +224,25 @@ function _draw()
     draw_game()
   else
     draw_score()
+  end
+end
+
+function _init()
+  reset_game()
+end
+
+function _update()
+  if ball.alive then
+    check_space()
+    move_ball()
+    check_space()
+    drop_ball()
+    check_space()
+    lift()
+    add_platforms()
+    remove_platforms()
+  else
+    check_reset()
   end
 end
 __gfx__
