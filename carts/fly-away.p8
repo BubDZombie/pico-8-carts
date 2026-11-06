@@ -3,7 +3,9 @@ version 43
 __lua__
 --fly away
 --matt maul
-arrow_speed=4
+cartdata("fly-away")
+accel_x=1
+accel_y=0.13
 ball={
   size=4,
   color=11
@@ -11,6 +13,7 @@ ball={
 close_platforms={}
 clouds={6,8,10,12}
 dead_platforms={}
+high_score=dget(0)
 platforms={}
 platform_color=7
 platform_w=16
@@ -102,29 +105,42 @@ function check_space()
 end
 
 function move_ball()
-  if btn(0) then
-    ball.dir="left"
-    if ball.left_space > arrow_speed then
-      ball.x-=arrow_speed
+  if btn(⬅️) then
+    if ball.speed_x > ball.max_speed * -1 then
+      ball.speed_x-=accel_x
+    end
+  elseif btn(➡️) then
+    if ball.speed_x < ball.max_speed then
+      ball.speed_x+=accel_x
+    end
+  elseif ball.speed_x > 0 then
+    ball.speed_x-=accel_x
+  elseif ball.speed_x < 0 then
+    ball.speed_x+=accel_x
+  end
+  if ball.speed_x < 0 then
+    if ball.left_space > ball.speed_x * -1 then
+      ball.x+=ball.speed_x
     else
       ball.x-=ball.left_space
+      ball.speed_x=0
     end
-  elseif btn(1) then
-    ball.dir="right"
-    if ball.right_space > arrow_speed then
-      ball.x+=arrow_speed
+  elseif ball.speed_x > 0 then
+    if ball.right_space > ball.speed_x then
+      ball.x+=ball.speed_x
     else
       ball.x+=ball.right_space
+      ball.speed_x=0
     end
   end
-  if ball.up_space >= ball.speed then
-    ball.y -= ball.speed
+  if ball.up_space >= ball.speed_y then
+    ball.y -= ball.speed_y
   else
     ball.y -= ball.up_space
-    ball.speed = ball.up_space
+    ball.speed_y = ball.up_space
   end
-  if ball.speed < ball.max_speed then
-    ball.speed+=0.125
+  if ball.speed_y < ball.max_speed then
+    ball.speed_y+=accel_y
   end
 end
 
@@ -147,17 +163,20 @@ function move_string()
 end
 
 function drop()
-  if ball.up_space < camera_speed
+  drop_speed=flr(camera_speed+camera_speed_delta)
+  if ball.up_space < drop_speed
       and ball.y > ball.size then
-    ball.y+=camera_speed - ball.up_space
+    ball.y+=drop_speed - ball.up_space
   end
   for p in all(platforms) do
-    p.y+=camera_speed
+    p.y+=drop_speed
   end
   if ball.y > 128 - ball.size then
-    ball.alive = false
-  else
-    score+=1
+    ball.alive=false
+    if score > high_score then
+      high_score=score
+      dset(0,high_score)
+    end
   end
 end
 
@@ -199,6 +218,7 @@ end
 function remove_platforms()
   for p in all(dead_platforms) do
     del(platforms,p)
+    score+=1
   end
 end
 
@@ -213,12 +233,13 @@ function reset_game()
   ball.y=128-8-string_length
   ball.alive=true
   ball.can_fall=true
-  ball.dir="left"
-  ball.speed=0
-  ball.max_speed=4
+  ball.speed_x=0
+  ball.speed_y=0
+  ball.max_speed=5
   camera_speed=2
+  camera_speed_delta=0
   score=0
-  spread=28
+  spread=40
   spread_shrink_chance=0.10
   platform_chance=2*spread
   for p in all(platforms) do
@@ -260,7 +281,8 @@ function draw_game()
 --    )
     spr(p.cloud,p.x,p.y,2,1)
   end
-  print("score "..score,1,120,text_color)
+  print("score "..score,1,122,text_color)
+  print("high score "..high_score,64,122,text_color)
 end
 
 function print_center(str, y, col)
@@ -270,7 +292,8 @@ end
 
 function draw_score()
   print_center("score: "..score,54,text_color)
-  print_center("🅾️ to restart",70,text_color)
+  print_center("high score: "..high_score,64,text_color)
+  print_center("🅾️ to restart",74,text_color)
 end
 
 function _init()
